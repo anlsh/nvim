@@ -615,7 +615,7 @@ require('lazy').setup({
       local servers = {
         clangd = {},
         -- pyright = {},
-        -- rust_analyzer = {},
+        rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
         -- Some languages (like typescript) have entire language plugins that can be useful:
@@ -652,6 +652,7 @@ require('lazy').setup({
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
       local ensure_installed = vim.tbl_filter(function(item)
+        -- https://github.com/mason-org/mason.nvim/issues/1578
         return item ~= 'clangd'
       end, vim.tbl_keys(servers or {}))
       vim.list_extend(ensure_installed, {
