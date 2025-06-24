@@ -434,7 +434,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>pf', builtin.git_files, { desc = '[P]earch [F]iles' })
-      vim.keymap.set('n', '<leader>bi', builtin.buffers, { desc = '[P]earch [F]iles' })
+      vim.keymap.set('n', '<leader>bb', builtin.buffers, { desc = '[B]earch [B]uffers' })
       vim.keymap.set('n', '<leader>*', builtin.live_grep, { desc = '[S]earch by [G]rep' })
 
       -- Slightly advanced example of overriding default behavior and theme
