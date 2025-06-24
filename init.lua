@@ -159,6 +159,7 @@ vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower win
 vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
 vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
+vim.keymap.set('n', '<leader>qq', '<cmd>:q<CR>', { desc = '[Q]uit [Q]uit' })
 
 -- clangd is set up differently than all of the other LSPs due to
 -- https://github.com/mason-org/mason.nvim/issues/1578?
