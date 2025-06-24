@@ -180,6 +180,15 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 -- TODO: Anish
 vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
 
+-- clangd is set up differently than all of the other LSPs due to
+-- https://github.com/mason-org/mason.nvim/issues/1578?
+vim.lsp.config('clangd', {
+  cmd = { 'clangd' },
+  root_markers = { '.clangd', 'compile_commands.json' },
+  filetypes = { 'c', 'cpp', 'cc' },
+})
+vim.lsp.enable 'clangd'
+
 -- [[ Basic Autocommands ]]
 --  See `:help lua-guide-autocommands`
 
@@ -613,7 +622,6 @@ require('lazy').setup({
       --  - settings (table): Override the default settings passed when initializing the server.
       --        For example, to see the options for `lua_ls`, you could go to: https://luals.github.io/wiki/settings/
       local servers = {
-        clangd = {},
         -- pyright = {},
         rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
@@ -651,7 +659,6 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      -- TODO: How to resolve https://github.com/mason-org/mason.nvim/issues/1578?
       local ensure_installed = servers or {}
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
