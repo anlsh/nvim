@@ -651,10 +651,8 @@ require('lazy').setup({
       --
       -- You can add other tools here that you want Mason to install
       -- for you, so that they are available from within Neovim.
-      local ensure_installed = vim.tbl_filter(function(item)
-        -- https://github.com/mason-org/mason.nvim/issues/1578
-        return item ~= 'clangd'
-      end, vim.tbl_keys(servers or {}))
+      -- TODO: How to resolve https://github.com/mason-org/mason.nvim/issues/1578?
+      local ensure_installed = servers or {}
       vim.list_extend(ensure_installed, {
         'stylua', -- Used to format Lua code
       })
