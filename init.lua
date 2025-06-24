@@ -25,14 +25,6 @@ Kickstart Guide:
 
   TODO: The very first thing you should do is to run the command `:Tutor` in Neovim.
 
-    If you don't know what this means, type the following:
-      - <escape key>
-      - :
-      - Tutor
-      - <enter key>
-
-    (If you already know the Neovim basics, you can skip this step.)
-
   Once you've completed that, you can continue working through **AND READING** the rest
   of the kickstart init.lua.
 
@@ -80,7 +72,7 @@ vim.g.have_nerd_font = false
 vim.o.number = true
 -- You can also add relative line numbers, to help with jumping.
 --  Experiment for yourself to see if you like it!
--- vim.o.relativenumber = true
+vim.o.relativenumber = true
 
 -- Enable mouse mode, can be useful for resizing splits for example!
 -- TODO: I may want to re-enable this later once clipboard sharing is set up
@@ -183,7 +175,7 @@ vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
 -- clangd is set up differently than all of the other LSPs due to
 -- https://github.com/mason-org/mason.nvim/issues/1578?
 vim.lsp.config('clangd', {
-  cmd = { 'clangd' },
+  cmd = { 'clangd', '--background-index', '--limit-references=1000', '--limit-results=1000' },
   root_markers = { '.clangd', 'compile_commands.json' },
   filetypes = { 'c', 'cpp', 'cc' },
 })
@@ -441,7 +433,9 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
+      vim.keymap.set('n', '<leader>pf', builtin.git_files, { desc = '[P]earch [F]iles' })
+      vim.keymap.set('n', '<leader>bi', builtin.buffers, { desc = '[P]earch [F]iles' })
+      vim.keymap.set('n', '<leader>*', builtin.live_grep, { desc = '[S]earch by [G]rep' })
 
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
@@ -526,24 +520,20 @@ require('lazy').setup({
 
           -- Execute a code action, usually your cursor needs to be on top of an error
           -- or a suggestion from your LSP for this to activate.
-          map('<localleader>ga', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-          map('<localleader>gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-          map('<localleader>gi', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
+          map('<localleader>a', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
+          map('<localleader>r', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
+          map('<localleader>i', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
           -- Jump to the definition of the word under your cursor.
           --  This is where a variable was first declared, or where a function is defined, etc.
           --  To jump back, press <C-t>.
-          map('<localleader>gg', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-          map('<localleader>gd', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-          -- Fuzzy find all the symbols in your current document.
-          --  Symbols are things like variables, functions, types, etc.
-          map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
-          -- Fuzzy find all the symbols in your current workspace.
-          --  Similar to document symbols, except searches over your entire project.
-          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
+          map('<localleader>d', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('<localleader>D', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
+          map('<localleader>s', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[S]ymbols')
+          map('<localleader>S', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
           -- Jump to the type of the word under your cursor.
           --  Useful when you're not sure what type a variable is and you want to see
           --  the definition of its *type*, not where it was *defined*.
-          map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          map('<localleader>t', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
 
           -- This function resolves a difference between neovim nightly (version 0.11) and stable (version 0.10)
           ---@param client vim.lsp.Client
