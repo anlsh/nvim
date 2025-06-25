@@ -392,6 +392,75 @@ require('lazy').setup({
 
       -- [[ Configure Telescope ]]
       -- See `:help telescope` and `:help telescope.setup()`
+
+      local pickers = require 'telescope.pickers'
+      local finders = require 'telescope.finders'
+      local conf = require('telescope.config').values
+      function get_directory(path)
+        return path:match '^(.*[/\\])' or ''
+      end
+
+      local dynamic_find_files = function(opts)
+        opts = opts or {}
+        local current_buffer_path = vim.api.nvim_buf_get_name(0)
+        opts.default_text = vim.fn.fnamemodify(current_buffer_path, ':h') .. '/'
+
+        pickers
+          .new(opts, {
+            prompt_title = 'Dynamic Find Files',
+            finder = finders.new_dynamic {
+              fn = function(prompt)
+                -- return { 'a', 'b', prompt }
+                local files = {}
+
+                local path = get_directory(prompt)
+                -- TODO: Now I have to install luarocks and luafilesystem for this?
+                for entry in require('lfs').dir(path) do
+                  if entry ~= '.' and entry ~= '..' then
+                    local full_path = path .. entry
+                    local attr = lfs.attributes(full_path)
+                    if attr then
+                      if attr.mode == 'directory' then
+                        table.insert(files, full_path .. '/')
+                      elseif attr.mode == 'file' then
+                        table.insert(files, full_path)
+                      end
+                    end
+                  end
+                end
+                return files
+              end,
+            },
+            sorter = conf.file_sorter(opts),
+            attach_mappings = function(prompt_bufnr, map)
+              map('i', '<Tab>', function()
+                local picker = require('telescope.actions.state').get_current_picker(prompt_bufnr)
+                local selection = picker:get_selection()
+                if selection then
+                  local new_prompt = selection[1] or selection
+                  -- TODO: set_prompt is undocumented
+                  picker:set_prompt(new_prompt, true)
+                end
+              end)
+              map('i', '<Backspace>', function()
+                local picker = require('telescope.actions.state').get_current_picker(prompt_bufnr)
+                local curr_prompt = picker:_get_prompt()
+                if curr_prompt == '' then
+                  return
+                elseif curr_prompt:sub(-1) == '/' then
+                  local without_trailing = curr_prompt:sub(1, -2)
+                  local head = without_trailing:match '^(.*)/'
+                  picker:set_prompt((head or '') .. '/', true)
+                else
+                  return picker:set_prompt(curr_prompt:sub(1, -2), true)
+                end
+              end)
+              return true
+            end,
+          })
+          :find()
+      end
+
       require('telescope').setup {
         -- You can put your default mappings / updates / etc. in here
         --  All the info you're looking for is in `:help telescope.setup()`
@@ -424,6 +493,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>mm', dynamic_find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>pf', builtin.git_files, { desc = '[P]earch [F]iles' })
       vim.keymap.set('n', '<leader>bb', builtin.buffers, { desc = '[B]earch [B]uffers' })
       vim.keymap.set('n', '<leader>*', builtin.live_grep, { desc = '[S]earch by [G]rep' })
