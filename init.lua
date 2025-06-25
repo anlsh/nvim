@@ -405,6 +405,11 @@ require('lazy').setup({
         local current_buffer_path = vim.api.nvim_buf_get_name(0)
         opts.default_text = vim.fn.fnamemodify(current_buffer_path, ':h') .. '/'
 
+        -- TODO: This involved an installation of luarocks and its luafilesystem
+        -- package.
+        -- TODO: Would be sick to normalize the prompt constantly to be more like
+        -- counsel-find-file
+        -- TODO: The set_prompt feature is undocumented!
         pickers
           .new(opts, {
             prompt_title = 'Dynamic Find Files',
@@ -438,7 +443,6 @@ require('lazy').setup({
                 local selection = picker:get_selection()
                 if selection then
                   local new_prompt = selection[1] or selection
-                  -- TODO: set_prompt is undocumented
                   picker:set_prompt(new_prompt, true)
                 end
               end)
@@ -454,6 +458,21 @@ require('lazy').setup({
                 else
                   return picker:set_prompt(curr_prompt:sub(1, -2), true)
                 end
+              end)
+              local actions = require 'telescope.actions'
+              local action_state = require 'telescope.actions.state'
+
+              actions.select_default:replace(function()
+                local prompt = action_state.get_current_line()
+                actions.close(prompt_bufnr)
+
+                if prompt == '' then
+                  vim.notify('No filename given', vim.log.levels.WARN)
+                  return
+                end
+
+                local path = vim.fn.expand(prompt)
+                vim.cmd('edit ' .. vim.fn.fnameescape(path))
               end)
               return true
             end,
@@ -492,8 +511,7 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = '[S]earch [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = '[S]earch [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
-      vim.keymap.set('n', '<leader>ff', builtin.find_files, { desc = '[S]earch [F]iles' })
-      vim.keymap.set('n', '<leader>mm', dynamic_find_files, { desc = '[S]earch [F]iles' })
+      vim.keymap.set('n', '<leader>ff', dynamic_find_files, { desc = '[S]earch [F]iles' })
       vim.keymap.set('n', '<leader>pf', builtin.git_files, { desc = '[P]earch [F]iles' })
       vim.keymap.set('n', '<leader>bb', builtin.buffers, { desc = '[B]earch [B]uffers' })
       vim.keymap.set('n', '<leader>*', builtin.live_grep, { desc = '[S]earch by [G]rep' })
