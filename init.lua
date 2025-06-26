@@ -1,5 +1,5 @@
 --[[
-
+fff
 What is Kickstart?
 
   Kickstart.nvim is *not* a distribution.
@@ -551,6 +551,23 @@ require('lazy').setup({
       vim.keymap.set('n', '<leader>bb', builtin.buffers, { desc = '[B]earch [B]uffers' })
       vim.keymap.set('n', '<leader>*', builtin.live_grep, { desc = '[S]earch by [G]rep' })
 
+      -- TODO: This is scuffed really, I'm not sure if it works well.
+      vim.keymap.set('n', '<leader>br', function()
+        if vim.bo.modified then
+          vim.cmd 'echohl WarningMsg'
+          vim.cmd 'echo "Discard changes and reload buffer? (y/n)"'
+          vim.cmd 'echohl None'
+          local choice = vim.fn.nr2char(vim.fn.getchar())
+          if choice:lower() == 'y' then
+            vim.cmd 'e!'
+          else
+            print 'Cancelled.'
+          end
+        else
+          print 'Buffer is already up to date.'
+        end
+      end)
+
       -- Slightly advanced example of overriding default behavior and theme
       vim.keymap.set('n', '<leader>/', function()
         -- You can pass additional configuration to Telescope to change the theme, layout, etc.
@@ -752,8 +769,7 @@ require('lazy').setup({
         rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         lua_ls = {},
-        },
-      
+      }
 
       -- Ensure the servers and tools above are installed
       --
