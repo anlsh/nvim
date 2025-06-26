@@ -143,6 +143,22 @@ vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagn
 -- or just use <C-\><C-n> to exit terminal mode
 vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+-- Use tab to select completion candidate
+-- TODO: This breaks snippets completion when performed inside of lazy's blink
+-- config() hmm... also reloading blink.cmp every time the tab is performed might
+-- not be great?
+vim.keymap.set('i', '<Tab>', function()
+  local col = vim.fn.col '.' - 1
+  if require('blink.cmp').is_visible() then
+    require('blink.cmp').accept()
+    return ''
+  elseif col == 0 or vim.fn.getline('.'):sub(col, col):match '%s' then
+    return '<Tab>'
+  else
+    return '<C-x><C-o>' -- Or "<C-n>" or your preferred completion trigger
+  end
+end, { expr = true, noremap = true })
+
 -- TIP: Disable arrow keys in normal mode
 -- vim.keymap.set('n', '<left>', '<cmd>echo "Use h to move!!"<CR>')
 -- vim.keymap.set('n', '<right>', '<cmd>echo "Use l to move!!"<CR>')
