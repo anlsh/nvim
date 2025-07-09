@@ -186,10 +186,11 @@ local is_google3 = function(fname)
   end
 end
 
+local ciderlsp = 'ciderlsp'
+
 -- TODO: Shove google-specific config elsewhere.
 vim.lsp.config('ciderlsp', {
   cmd = { '/google/bin/releases/cider/ciderlsp/ciderlsp', '--tooltag=nvim-lsp', '--noforward_sync_responses' },
-  filetypes = { 'c', 'cpp', 'cc', 'java', 'kotlin', 'objc', 'proto', 'textpb', 'go', 'python', 'bzl', 'typescript' },
   -- root_markers = { '.citc' },
   root_dir = function(bufnr, on_dir)
     local citc_dir = is_google3(vim.api.nvim_buf_get_name(bufnr))
@@ -197,13 +198,15 @@ vim.lsp.config('ciderlsp', {
       on_dir(citc_dir)
     end
   end,
+  name = ciderlsp,
 })
+
 vim.lsp.enable 'ciderlsp'
 
 -- clangd is set up differently than all of the other LSPs due to
 -- https://github.com/mason-org/mason.nvim/issues/1578?
 vim.lsp.config('clangd', {
-  cmd = { 'clangd', '--background-index', '--limit-references=1000', '--limit-results=1000' },
+  cmd = { 'clangd', '--background-index' },
   root_markers = { '.clangd', 'compile_commands.json' },
   root_dir = function(bufnr, on_dir)
     local fname = vim.api.nvim_buf_get_name(bufnr)
@@ -662,24 +665,12 @@ require('lazy').setup({
       'saghen/blink.cmp',
     },
     config = function()
-      -- Thus, Language Servers are external tools that must be installed separately from
-      -- Neovim. This is where `mason` and related plugins come into play.
-      --
-      -- If you're wondering about lsp vs treesitter, you can check out the wonderfully
-      -- and elegantly composed help section, `:help lsp-vs-treesitter`
-
-      --  This function gets run when an LSP attaches to a particular buffer.
-      --    That is to say, every time a new file is opened that is associated with
-      --    an lsp (for example, opening `main.rs` is associated with `rust_analyzer`) this
-      --    function will be executed to configure the current buffer
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
         callback = function(event)
-          -- In this case, we create a function that lets us more easily define mappings specific
-          -- for LSP related items. It sets the mode, buffer and description for us each time.
           local map = function(keys, func, desc, mode)
             mode = mode or 'n'
-            vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = 'LSP: ' .. desc })
+            vim.keymap.set(mode, keys, func, { buffer = event.buf, desc = desc })
           end
 
           map('<localleader>R', vim.lsp.buf.rename, '[R]e[n]ame')
@@ -751,6 +742,14 @@ require('lazy').setup({
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
+          end
+
+          -- TODO: Google-specific!
+          if client.name == ciderlsp then
+            print 'Trying to override to CS'
+            vim.keymap.set('n', '<leader>*', function()
+              vim.cmd 'Telescope codesearch find_query'
+            end, { buffer = event.buf, desc = 'code search' })
           end
         end,
       })
@@ -1044,6 +1043,23 @@ require('lazy').setup({
     --    - Incremental selection: Included, see `:help nvim-treesitter-incremental-selection-mod`
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
+  },
+  {
+    -- TODO: Google-specific
+    -- https://g3doc.corp.google.com/experimental/users/vintharas/telescope-codesearch.nvim/README.md
+    'vintharas/telescope-codesearch.nvim',
+    dependencies = { 'nvim-telescope/telescope.nvim' },
+    url = 'sso://user/vintharas/telescope-codesearch.nvim',
+    keys = {
+      {
+        '<leader>sc',
+        '<cmd>Telescope codesearch find_query<cr>',
+        desc = '[S]earch [C]oogle via CodeSearch',
+      },
+    },
+    config = function()
+      require('telescope').load_extension 'codesearch'
+    end,
   },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
