@@ -177,11 +177,46 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
 vim.keymap.set('n', '<leader>qq', '<cmd>:q<CR>', { desc = '[Q]uit [Q]uit' })
 
+local is_google3 = function(fname)
+  local citc_results = vim.fs.find('.citc', { upward = true, path = fname })
+  if #citc_results ~= 0 then
+    return vim.fs.dirname(citc_results[1])
+  else
+    return nil
+  end
+end
+
+-- TODO: Shove google-specific config elsewhere.
+vim.lsp.config('ciderlsp', {
+  cmd = { '/google/bin/releases/cider/ciderlsp/ciderlsp', '--tooltag=nvim-lsp', '--noforward_sync_responses' },
+  filetypes = { 'c', 'cpp', 'cc', 'java', 'kotlin', 'objc', 'proto', 'textpb', 'go', 'python', 'bzl', 'typescript' },
+  -- root_markers = { '.citc' },
+  root_dir = function(bufnr, on_dir)
+    local citc_dir = is_google3(vim.api.nvim_buf_get_name(bufnr))
+    if citc_dir then
+      on_dir(citc_dir)
+    end
+  end,
+})
+vim.lsp.enable 'ciderlsp'
+
 -- clangd is set up differently than all of the other LSPs due to
 -- https://github.com/mason-org/mason.nvim/issues/1578?
 vim.lsp.config('clangd', {
   cmd = { 'clangd', '--background-index', '--limit-references=1000', '--limit-results=1000' },
   root_markers = { '.clangd', 'compile_commands.json' },
+  root_dir = function(bufnr, on_dir)
+    local fname = vim.api.nvim_buf_get_name(bufnr)
+    if is_google3(fname) then
+      return
+    end
+    local root_markers = { '.clangd', 'compile_commands.json' }
+    local root_dirs = vim.fs.find(root_markers, { upward = true, path = fname })
+    if #root_dirs == 0 then
+      on_dir(vim.fs.dirname(fname))
+    end
+    on_dir(vim.fs.dirname(root_dirs[1]))
+  end,
   filetypes = { 'c', 'cpp', 'cc' },
 })
 vim.lsp.enable 'clangd'
@@ -755,15 +790,6 @@ require('lazy').setup({
       --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
-      -- Enable the following language servers
-      --  Feel free to add/remove any LSPs that you want here. They will automatically be installed.
-      --
-      --  Add any additional override configuration in the following tables. Available keys are:
-      --  - cmd (table): Override the default command used to start the server
-      --  - filetypes (table): Override the default list of associated filetypes for the server
-      --  - capabilities (table): Override fields in capabilities. Can be used to disable certain LSP features.
-      --  - settings (table): Override the default settings passed when initializing the server.
-      --        For example, to see the options for `lua_ls`, you could go to: https://lals.github.io/wiki/settings/
       local servers = {
         -- pyright = {},
         rust_analyzer = {},
@@ -979,11 +1005,7 @@ require('lazy').setup({
       -- - sr)'  - [S]urround [R]eplace [)] [']
       require('mini.surround').setup()
 
-      -- Simple and easy statusline.
-      --  You could remove this setup call if you don't like it,
-      --  and try some other statusline plugin
       local statusline = require 'mini.statusline'
-      -- set use_icons to true if you have a Nerd Font
       statusline.setup { use_icons = vim.g.have_nerd_font }
 
       -- You can configure sections in the statusline by overriding their
@@ -1071,6 +1093,3 @@ require('lazy').setup({
     },
   },
 })
-
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et
