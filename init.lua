@@ -242,16 +242,6 @@ end
 local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
--- [[ Configure and install plugins ]]
---
---  To check the current status of your plugins, run
---    :Lazy
---
---  You can press `?` in this menu for help. Use `:q` to close the window
---
---  To update plugins you can run
---    :Lazy update
-
 PACKAGES = {
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
@@ -283,6 +273,33 @@ PACKAGES = {
       vim.keymap.set('n', '<leader>gg', function()
         require('neogit').open { cwd = vim.fn.expand '%:p:h' }
       end, { desc = '[G]it [G]atus' })
+
+      -- Never interact with git except through Neogit!
+      if os.getenv 'NEOGIT_SLAVE' then
+        local registered_callback = nil
+        vim.api.nvim_create_autocmd('User', {
+          pattern = 'NeogitStatusRefreshed',
+          callback = function()
+            if registered_callback then
+              return
+            end
+            registered_callback = true
+
+            vim.api.nvim_create_autocmd('BufEnter', {
+              callback = function()
+                for _, win in ipairs(vim.api.nvim_list_wins()) do
+                  local buf = vim.api.nvim_win_get_buf(win)
+                  local name = vim.api.nvim_buf_get_name(buf)
+                  if name:match 'Neogit' then
+                    return
+                  end
+                end
+                vim.cmd 'qa'
+              end,
+            })
+          end,
+        })
+      end
     end,
   },
   -- Use `opts = {}` to automatically pass options to a plugin's `setup()` function, forcing the plugin to be loaded.
