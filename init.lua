@@ -163,49 +163,33 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
 vim.keymap.set('n', '<leader>qq', '<cmd>:q<CR>', { desc = '[Q]uit [Q]uit' })
 
-local is_google3 = function(fname)
-  local citc_results = vim.fs.find('.citc', { upward = true, path = fname })
-  if #citc_results ~= 0 then
-    return vim.fs.dirname(citc_results[1])
-  else
-    return nil
-  end
+-- The .nvim.local.lua may set this variable to provide an LSP at higher priority than
+-- what we configure here.
+SUPPRESS_LSP = function(_)
+  -- Parameter is the buffer's file name as string
+  return false
 end
 
-local ciderlsp = 'ciderlsp'
-
--- TODO: Shove google-specific config elsewhere.
-vim.lsp.config('ciderlsp', {
-  cmd = { '/google/bin/releases/cider/ciderlsp/ciderlsp', '--tooltag=nvim-lsp', '--noforward_sync_responses' },
-  -- root_markers = { '.citc' },
-  root_dir = function(bufnr, on_dir)
-    local citc_dir = is_google3(vim.api.nvim_buf_get_name(bufnr))
-    if citc_dir then
-      on_dir(citc_dir)
-    end
-  end,
-  name = ciderlsp,
-})
-
-vim.lsp.enable 'ciderlsp'
-
--- clangd is set up differently than all of the other LSPs due to
--- https://github.com/mason-org/mason.nvim/issues/1578?
-vim.lsp.config('clangd', {
-  cmd = { 'clangd', '--background-index' },
-  root_markers = { '.clangd', 'compile_commands.json' },
-  root_dir = function(bufnr, on_dir)
+local get_lsp_root_dir_fn = function(root_markers)
+  return function(bufnr, on_dir)
     local fname = vim.api.nvim_buf_get_name(bufnr)
-    if is_google3(fname) then
+    if SUPPRESS_LSP(fname) then
       return
     end
-    local root_markers = { '.clangd', 'compile_commands.json' }
+
     local root_dirs = vim.fs.find(root_markers, { upward = true, path = fname })
     if #root_dirs == 0 then
       on_dir(vim.fs.dirname(fname))
     end
     on_dir(vim.fs.dirname(root_dirs[1]))
-  end,
+  end
+end
+
+-- clangd is set up differently than all of the other LSPs due to
+-- https://github.com/mason-org/mason.nvim/issues/1578?
+vim.lsp.config('clangd', {
+  cmd = { 'clangd', '--background-index' },
+  root_dir = get_lsp_root_dir_fn { '.clangd', 'compile_commands.json' },
   filetypes = { 'c', 'cpp', 'cc' },
 })
 vim.lsp.enable 'clangd'
@@ -267,8 +251,8 @@ rtp:prepend(lazypath)
 --
 --  To update plugins you can run
 --    :Lazy update
-require('lazy').setup({
-  -- NOTE: Plugins can be added with a link (or for a github repo: 'owner/repo' link).
+
+PACKAGES = {
   'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
 
   {
@@ -729,14 +713,6 @@ require('lazy').setup({
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, '[T]oggle Inlay [H]ints')
           end
-
-          -- TODO: Google-specific!
-          if client.name == ciderlsp then
-            print 'Trying to override to CS'
-            vim.keymap.set('n', '<leader>*', function()
-              vim.cmd 'Telescope codesearch find_query'
-            end, { buffer = event.buf, desc = 'code search' })
-          end
         end,
       })
 
@@ -1030,23 +1006,6 @@ require('lazy').setup({
     --    - Show your current context: https://github.com/nvim-treesitter/nvim-treesitter-context
     --    - Treesitter + textobjects: https://github.com/nvim-treesitter/nvim-treesitter-textobjects
   },
-  {
-    -- TODO: Google-specific
-    -- https://g3doc.corp.google.com/experimental/users/vintharas/telescope-codesearch.nvim/README.md
-    'vintharas/telescope-codesearch.nvim',
-    dependencies = { 'nvim-telescope/telescope.nvim' },
-    url = 'sso://user/vintharas/telescope-codesearch.nvim',
-    keys = {
-      {
-        '<leader>sc',
-        '<cmd>Telescope codesearch find_query<cr>',
-        desc = '[S]earch [C]oogle via CodeSearch',
-      },
-    },
-    config = function()
-      require('telescope').load_extension 'codesearch'
-    end,
-  },
 
   -- The following comments only work if you have downloaded the kickstart repo, not just copy pasted the
   -- init.lua. If you want these files, they are in the repository, so you can just download them and
@@ -1074,7 +1033,16 @@ require('lazy').setup({
   -- Or use telescope!
   -- In normal mode type `<space>sh` then write `lazy.nvim-plugin`
   -- you can continue same window with `<space>sr` which resumes last telescope search
-}, {
+}
+
+-- Load local init file, if it exists
+-- NOTE: We do this before lazy setup so that the local init file can append anything it needs to PACKAGES
+local local_init_file = vim.fn.expand '~/.nvim.local.lua'
+if vim.uv.fs_stat(local_init_file) then
+  loadfile(local_init_file)()
+end
+
+require('lazy').setup(PACKAGES, {
   ui = {
     -- If you are using a Nerd Font: set icons to an empty table which will use the
     -- default lazy.nvim defined Nerd Font icons, otherwise define a unicode icons table
@@ -1095,10 +1063,3 @@ require('lazy').setup({
     },
   },
 })
-
--- Load local init file, if it exists
-local local_init_file = vim.fn.expand '~/.nvim.local.lua'
-if vim.uv.fs_stat(local_init_file) then
-  print 'Loading local init file!'
-  loadfile(local_init_file)()
-end
