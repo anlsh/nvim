@@ -1095,3 +1095,10 @@ require('lazy').setup({
     },
   },
 })
+
+-- Load local init file, if it exists
+local local_init_file = vim.fn.expand '~/.nvim.local.lua'
+if vim.uv.fs_stat(local_init_file) then
+  print 'Loading local init file!'
+  loadfile(local_init_file)()
+end
