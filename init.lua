@@ -243,8 +243,7 @@ local rtp = vim.opt.rtp
 rtp:prepend(lazypath)
 
 PACKAGES = {
-  'NMAC427/guess-indent.nvim', -- Detect tabstop and shiftwidth automatically
-
+  { 'NMAC427/guess-indent.nvim', opts = {} },
   {
     'windwp/nvim-autopairs',
     event = 'InsertEnter',
