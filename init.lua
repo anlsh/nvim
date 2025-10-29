@@ -163,6 +163,10 @@ vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper win
 vim.keymap.set('n', '<leader>fs', '<cmd>:w<CR>', { desc = '[F]ile [S]ave' })
 vim.keymap.set('n', '<leader>qq', '<cmd>:q<CR>', { desc = '[Q]uit [Q]uit' })
 
+-- Keep selection after indenting in Visual and Visual Block modes
+vim.keymap.set({ 'v', 'x' }, '<', '<gv')
+vim.keymap.set({ 'v', 'x' }, '>', '>gv')
+
 -- The .nvim.local.lua may set this variable to provide an LSP at higher priority than
 -- what we configure here.
 SUPPRESS_LSP = function(_)
