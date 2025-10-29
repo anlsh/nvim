@@ -167,6 +167,10 @@ vim.keymap.set('n', '<leader>qq', '<cmd>:q<CR>', { desc = '[Q]uit [Q]uit' })
 vim.keymap.set({ 'v', 'x' }, '<', '<gv')
 vim.keymap.set({ 'v', 'x' }, '>', '>gv')
 
+vim.keymap.set('n', '<leader>fpr', function()
+  vim.cmd 'luafile $MYVIMRC'
+end, { desc = '[F]ile [R]eload' })
+
 -- The .nvim.local.lua may set this variable to provide an LSP at higher priority than
 -- what we configure here.
 SUPPRESS_LSP = function(_)
@@ -615,7 +619,7 @@ PACKAGES = {
       end, { desc = '[S]earch [/] in Open Files' })
 
       -- Shortcut for searching your Neovim configuration files
-      vim.keymap.set('n', '<leader>fp', function()
+      vim.keymap.set('n', '<leader>fpp', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = '[F]ile [P]init' })
     end,
