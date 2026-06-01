@@ -779,7 +779,10 @@ PACKAGES = {
       --  So, we create new capabilities with blink.cmp, and then broadcast that to the servers.
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
-      local servers = {}
+      local servers = {
+        { 'rust_analyzer' },
+        { 'lua_ls' },
+      }
 
       -- Ensure the servers and tools above are installed
       --
